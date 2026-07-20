@@ -1,9 +1,25 @@
+import os
+import sys
+from pathlib import Path
+
+# ==============================================================================
+# CRITICAL FIX FOR WINDOWS 10 & 11 (PyInstaller + pywebview + pythonnet)
+# ==============================================================================
+# Explicitly set the location of python3xx.dll before importing webview or clr.
+# This prevents 'RuntimeError: Failed to resolve Python.Runtime.Loader.Initialize'
+# when running frozen builds across different Windows machines.
+if getattr(sys, 'frozen', False):
+    python_dir = Path(sys.executable).parent
+    # Check both root and _internal directories for python3xx.dll
+    dll_candidates = list(python_dir.glob("python3*.dll")) + list((python_dir / "_internal").glob("python3*.dll"))
+    if dll_candidates:
+        os.environ["PYTHONNET_PYDLL"] = str(dll_candidates[0].resolve())
+# ==============================================================================
+
 import asyncio
 import websockets
 import threading
 import webview
-import os
-import sys
 
 # 1. Resolve asset path for PyInstaller bundle
 def resource_path(relative_path):
@@ -70,5 +86,6 @@ if __name__ == "__main__":
         height=700
     )
 
-    # Starts pywebview (blocks main thread until application window is closed)
-    webview.start()
+    # Starts pywebview with EdgeChromium engine fallback for Windows 10 & 11
+    # This prevents legacy WinForms/pythonnet initialization crashes
+    webview.start(gui='edgechromium')
