@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        #messages { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: scroll; margin-top: 10px; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+    <h2>Python & HTML WebSocket Connection</h2>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+
+    <h3>Chat Log:</h3>
+    <div id="messages"></div>
+
+    <script>
+        // 1. Connect to the Python WebSocket server
+        // const socket = new WebSocket('ws://localhost:8765');
+        // const socket = new WebSocket('ws://23.97.62.13:8765');
+        // Paste your exact Codespace URL for port 8765, but change 'https://' to 'wss://'
+        const socket = new WebSocket('wss://vigilant-doodle-5vvxxvv4v677c975-8765.app.github.dev/');
+        const messagesDiv = document.getElementById('messages');
+
+        // Connection opened event
+        socket.onopen = (event) => {
+            logMessage("System: Connected to the server.");
+        };
+
+        // Listen for messages from the server
+        socket.onmessage = (event) => {
+            logMessage(event.data);
+        };
+
+        // Connection closed event
+        socket.onclose = (event) => {
+            logMessage("System: Disconnected from the server.");
+        };
+
+        // Error handling
+        socket.onerror = (error) => {
+            logMessage("System Error: " + error.message);
+        };
+
+        // Function to send data to the server
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            if (input.value.trim() !== "" && socket.readyState === WebSocket.OPEN) {
+                socket.send(input.value);
+                logMessage("You: " + input.value);
+                input.value = ''; // Clear input
+            }
+        }
+
+        // Helper function to append messages to the screen
+        function logMessage(text) {
+            const msgParagraph = document.createElement('p');
+            msgParagraph.textContent = text;
+            messagesDiv.appendChild(msgParagraph);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+        }
+    </script>
+</body>
+</html>

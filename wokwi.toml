@@ -1,0 +1,8 @@
+[wokwi]
+version = 1
+firmware = 'build/testArduino.ino.hex'
+elf = 'build/testArduino.ino.elf'
+diagram = 'diagram.json'
+
+# Instruct Wokwi to listen strictly on local IPv4 loopback
+rfc2217ServerPort = 4000

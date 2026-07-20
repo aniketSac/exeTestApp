@@ -1,0 +1,50 @@
+// A simple queue to store data if the WebSocket isn't connected yet
+const packetQueue = [];
+
+function sendState(componentId, value, binaryString) {
+    let decimalValue;
+
+    // Handle binary string input (e.g., "110000" -> 48)
+    if (typeof value === 'string') {
+        // If it looks like a binary string, parse it as base-2, otherwise fallback to base-10
+        decimalValue = /^[01]+$/.test(value) ? parseInt(value, 2) : parseInt(value, 10);
+    } else {
+        decimalValue = Number(value);
+    }
+
+    // Create the exact ultra-lean 2-byte packet the Python/Arduino code expects
+    const packet = new Uint8Array([componentId, decimalValue]);
+
+    // Check if WebSocket is open and ready
+    if (typeof ws !== 'undefined' && ws.readyState === WebSocket.OPEN) {
+        ws.send(packet);
+        console.log(`🚀 Sent to Python -> ID: ${componentId}, Dec: ${decimalValue} (Bin: ${decimalValue.toString(2).padStart(6, '0')})`);
+    } else {
+        console.warn(`⏳ WebSocket not open. Queuing packet for ID ${componentId} (Value: ${decimalValue})`);
+        packetQueue.push(packet);
+    }
+}
+
+// Inside your WebSocket initialization code, flush the queue on connect:
+// ws.onopen = () => {
+//     while (packetQueue.length > 0) {
+//         ws.send(packetQueue.shift());
+//     }
+// };
+
+
+
+import serial.tools.list_ports as lp
+
+port == next((p.device for p in lp.comports() if any (k in p.description for k in ("Mega"))),None)
+if not port : sys.exit("Arduino not Found")
+
+arduino = serial.Serial(port,9600)
+
+print("found on {port})
+🎯 Component ID : 2 Action: Toggle 1 flipped -> ON, byte b'\x01'
+Sent Packet (Raw): b'\x02\x01'
+Sent Packet (Array):  [2,1]
+Component ID Sent:  2
+Confirming  2 bytes left the PC. 
+Value Sent:      

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2^6 Binary Controller</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 40px; background: #fff; color: #e2e8f0; display: flex; justify-content: center; }
+        .container { max-width: 500px; width: 100%; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+        h3 { margin-top: 0; color: #888; text-align: center; }
+        
+        /* The 6-bit grid layout */
+        .bit-container { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 25px 0; }
+        
+        .bit-wrapper { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .weight-label { font-size: 12px; color: #000; font-family: monospace; }
+        
+        /* Digit Bit Buttons */
+        .bit-btn { 
+            width: 100%; padding: 15px 0; font-size: 24px; font-weight: bold; font-family: monospace;
+            border: 2px solid #334155; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .bit-btn.zero { background: #fff; color: #000; }
+        .bit-btn.one { background: #4caf50; color: white; border-color: #38bdf8; box-shadow: 0 0 10px rgba(14, 165, 233, 0.4); }
+
+        /* Input Controls Area */
+        .input-area { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; }
+        .input-area label { font-size: 14px; color: #000; }
+        .binary-input { 
+            width: 100%; padding: 10px; background: #eee; border: 2px solid #334155; 
+            border-radius: 6px; color: #000; font-family: monospace; font-size: 16px; 
+            box-sizing: border-box; outline: none; letter-spacing: 4px; text-align: center;
+        }
+        .binary-input:focus { border-color: #0ea5e9; }
+        .binary-input::placeholder { color: #475569; letter-spacing: 4px; }
+
+        #checkpointBtn {
+            width: 100%; padding: 10px; border: 2px solid #4caf50; background: rgba(34, 197, 94, 0.2);
+            color: #4caf50; font-weight: bold; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+        }
+        #checkpointBtn:hover { background: rgba(34, 197, 94, 0.5); color:#000; }
+
+        /* Status Metrics Dashboard */
+        .status-dashboard { margin: 20px 0; padding: 12px; border: 2px solid #000; background: #fff; border-radius: 8px; font-family: monospace; text-align: center; }
+        .status-block { display: flex; flex-direction: column; gap: 4px; }
+        .status-title { font-size: 12px; color: #94a3b8; text-transform: uppercase; }
+        .status-value { font-size: 18px; font-weight: bold; color: #4caf50;}
+
+        /* Action & Log Layout */
+        .action-area { display: flex; justify-content: flex-end; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #334155; }
+        
+        #convertBtn { 
+            padding: 12px 24px; border: none; background: #0ea5e9; color: white; 
+            font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s;
+        }
+        #convertBtn:hover { background: #0284c7; }
+        
+        #messages { margin-top: 20px; max-height: 120px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 14px;}
+        .local-msg { color: #4ade80; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>6-Bit ($2^6$) Binary Controller</h3>
+    
+    <!-- 6 Interactive Bit Buttons (Weights: 32 down to 1) -->
+    <div class="bit-container">
+        <div class="bit-wrapper">
+            <span class="weight-label">2⁵ (32)</span>
+            <button class="bit-btn zero" data-index="0">0</button>
+        </div>
+        <div class="bit-wrapper">
+            <span class="weight-label">2⁴ (16)</span>
+            <button class="bit-btn zero" data-index="1">0</button>
+        </div>
+        <div class="bit-wrapper">
+            <span class="weight-label">2³ (8)</span>
+            <button class="bit-btn zero" data-index="2">0</button>
+        </div>
+        <div class="bit-wrapper">
+            <span class="weight-label">2² (4)</span>
+            <button class="bit-btn zero" data-index="3">0</button>
+        </div>
+        <div class="bit-wrapper">
+            <span class="weight-label">2¹ (2)</span>
+            <button class="bit-btn zero" data-index="4">0</button>
+        </div>
+        <div class="bit-wrapper">
+            <span class="weight-label">2⁰ (1)</span>
+            <button class="bit-btn zero" data-index="5">0</button>
+        </div>
+    </div>
+
+    <!-- Manual Binary String Input & Status Fields -->
+    <div class="input-area">
+        <label for="rawBinaryStream">Type 6-bit binary string (0 and 1 only):</label>
+        <input type="text" id="rawBinaryStream" class="binary-input" maxlength="6" placeholder="000000" value="">
+        <button type="button" id="checkpointBtn">Update Current Status Display</button>
+    </div>
+
+    <!-- Metrics Dashboard (Only displaying Current Data) -->
+    <div class="status-dashboard">
+        <div class="status-block">
+            <span class="status-title">Current Data</span>
+            <span id="currentStatus" class="status-value">------</span>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+    // Arrays tracking current interactive states and saved snapshot display state
+    let bitStates = [0, 0, 0, 0, 0, 0];
+    let savedBitString = "------";
+
+    const bitButtons = document.querySelectorAll('.bit-btn');
+    const rawBinaryStream = document.getElementById('rawBinaryStream');
+    const checkpointBtn = document.getElementById('checkpointBtn');
+    const currentStatus = document.getElementById('currentStatus');
+    const convertBtn = document.getElementById('convertBtn');
+    const messagesDiv = document.getElementById('messages');
+
+    // Updates the graphic components based on the current bitStates array
+    function syncUIElements() {
+        bitButtons.forEach((button, index) => {
+            const currentBit = bitStates[index];
+            button.textContent = currentBit;
+            if(currentBit === 1) {
+                button.classList.replace('zero', 'one');
+            } else {
+                button.classList.replace('one', 'zero');
+            }
+        });
+
+        // Sync dashboard display string
+        currentStatus.textContent = savedBitString;
+    }
+
+    // 1. Toggle Bit Values on Grid Button Press
+    bitButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const index = parseInt(button.getAttribute('data-index'));
+            bitStates[index] = bitStates[index] === 0 ? 1 : 0;
+            
+            syncUIElements();
+            rawBinaryStream.value = bitStates.join('');
+        });
+    });
+
+    // 2. Strict Input filtering (Blocks anything that isn't 0 or 1)
+    rawBinaryStream.addEventListener('input', (e) => {
+        let cleanVal = e.target.value.replace(/[^01]/g, '');
+        e.target.value = cleanVal;
+
+        for (let i = 0; i < 6; i++) {
+            if (i < cleanVal.length) {
+                bitStates[i] = parseInt(cleanVal[i]);
+            } else {
+                bitStates[i] = 0;
+            }
+        }
+        syncUIElements();
+    });
+
+    // Automatically fill missing zeroes if you exit the input field with less than 6 digits
+    rawBinaryStream.addEventListener('blur', () => {
+        rawBinaryStream.value = bitStates.join('');
+    });
+
+    // 3. Status Display Action (Updates dashboard display with active snapshot data)
+    checkpointBtn.addEventListener('click', () => {
+        savedBitString = bitStates.join('');
+        syncUIElements();
+    });
+
+    // 4. Parse Binary to Decimal Locally
+    convertBtn.addEventListener('click', () => {
+        const payload = bitStates.join('');
+        const decimalValue = parseInt(payload, 2);
+
+        const log = document.createElement('div');
+        log.className = 'local-msg';
+        log.textContent = `[Local Output]: Value parsed to ${decimalValue} (Display Block: ${savedBitString} | Active: ${payload})`;
+        
+        messagesDiv.appendChild(log);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+</script>
+
+</body>
+</html>
