@@ -3,11 +3,11 @@ name: Build Windows EXE
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to trigger the build manually from GitHub
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-latest # Tells GitHub to use a real Windows VM!
 
     steps:
     - name: Checkout Code
@@ -23,12 +23,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller websockets pywebview
 
-    - name: Build with PyInstaller
+    - name: Build EXE with PyInstaller
       working-directory: ./app
-      run: pyinstaller main.py
+      run: |
+        # pyinstaller --onefile --noconsole --collect-all pywebview --add-data "index.html;." main.py
+        pyinstaller main.py
 
-    - name: Upload Output Folder
+    - name: Upload EXE Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: MyApp-Windows-Build
-        path: app/dist/main/
+        name: MyApp-Windows-EXE
+        path: app/dist/*.exe
