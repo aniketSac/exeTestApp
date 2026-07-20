@@ -1,20 +1,6 @@
 import asyncio
 import websockets
-import threading
-import webview
-import os
-import sys
 
-# 1. Resolve asset path for PyInstaller bundle
-def resource_path(relative_path):
-    try:
-        # PyInstaller extracts bundled files to _MEIPASS at runtime
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-# 2. Your WebSocket Handler (Port 8765)
 async def handle_client(websocket):
     print("🚀 Browser UI hooked into Python pipeline!")
     
@@ -22,6 +8,7 @@ async def handle_client(websocket):
         if isinstance(message, bytes):
             payload = list(message)
             
+            # Make sure we received all expected index fields
             if len(payload) == 2:
                 component_id = payload[0]
                 value = payload[1]
@@ -43,32 +30,10 @@ async def handle_client(websocket):
             else:
                 print(f"Incomplete payload layout received: {len(payload)} bytes.")
 
-# 3. Function to start the Asyncio Loop in a background thread
-def start_websocket_server():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    async def run_server():
-        async with websockets.serve(handle_client, "127.0.0.1", 8765):
-            print("⚡ WebSocket engine spinning on ws://127.0.0.1:8765...")
-            await asyncio.Future()  # Keep running
-
-    loop.run_until_complete(run_server())
+async def main():
+    async with websockets.serve(handle_client, "0.0.0.0", 8765):
+        print("WebSocket engine spinning on port 8765...")
+        await asyncio.Future();
 
 if __name__ == "__main__":
-    # Start the WebSocket server in a background daemon thread
-    server_thread = threading.Thread(target=start_websocket_server, daemon=True)
-    server_thread.start()
-
-    # Load local index.html directly into pywebview GUI window
-    html_file = resource_path("index.html")
-    
-    window = webview.create_window(
-        title="My Control App", 
-        url=html_file, 
-        width=900, 
-        height=700
-    )
-
-    # Starts pywebview (blocks main thread until application window is closed)
-    webview.start()
+    asyncio.run(main())
