@@ -25,7 +25,7 @@ jobs:
 
     - name: Build with PyInstaller
       working-directory: ./app
-      run: pyinstaller main.py --add-data "index.html;." --icon=app_icon.ico --add-data "app_icon.ico;." --collect-all pywebview --collect-all pythonnet
+      run: pyinstaller main.py --add-data "index.html;." --icon=icon.ico --add-data "icon.ico;." --collect-all pywebview --collect-all pythonnet
 
     - name: Upload Output Folder
       uses: actions/upload-artifact@v4
