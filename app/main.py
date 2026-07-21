@@ -69,8 +69,8 @@ if __name__ == "__main__":
     webview.create_window(
         title="Control Panel",
         url=f"file://{os.path.abspath(html_path)}",
-        width=450,
-        height=600,
+        width=800,
+        height=800,
         resizable=True,
     )
 

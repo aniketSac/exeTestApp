@@ -32,5 +32,5 @@ jobs:
     - name: Upload Output Folder
       uses: actions/upload-artifact@v4
       with:
-        name: MyApp-pyWebView
+        name: MyApp-pyWebVie  w
         path: app/dist/*.exe
