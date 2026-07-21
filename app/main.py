@@ -70,8 +70,8 @@ if __name__ == "__main__":
         title="Control Panel",
         url=f"file://{os.path.abspath(html_path)}",
         width=850,
-        height=850,
-        min_size=(850, 850),
+        height=900,
+        min_size=(850, 900),
         resizable=True,
     )
 

@@ -1,0 +1,36 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ "pyWebView" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        cache-dependency-path: 'app/main.py'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install websockets pyinstaller pywebview
+
+    - name: 6bit Controller
+      working-directory: ./app
+      run: |
+        pyinstaller --icon=icon.ico --add-data "index.html;." --add-data "icon.ico;." --onefile main.py
+    - name: Upload Output Folder
+      uses: actions/upload-artifact@v4
+      with:
+        name: MyApp-pyWebView
+        path: app/dist/*.exe
