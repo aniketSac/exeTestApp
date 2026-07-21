@@ -2,6 +2,7 @@ name: Download Offline Windows Wheels
 
 on:
   workflow_dispatch:
+  push: # <--- Added: Temporarily triggers on push to register the workflow in GitHub's database
 
 jobs:
   download-wheels:
