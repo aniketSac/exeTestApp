@@ -1,8 +1,10 @@
 import asyncio
 import os
 import sys
-import webbrowser
+import threading
 import websockets
+import webview
+
 
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller _MEIPASS."""
@@ -39,17 +41,38 @@ async def handle_client(websocket):
             else:
                 print(f"Incomplete payload layout received: {len(payload)} bytes.")
 
-async def main():
-    async with websockets.serve(handle_client, "0.0.0.0", 8765):
-        print("WebSocket engine spinning on port 8765...")
-        # Open the UI automatically in the default browser
-        html_path = get_resource_path("index.html")
-        webbrowser.open(f"file://{os.path.abspath(html_path)}")
+def run_websocket_server():
+    """Starts the asyncio WebSocket loop in a background thread."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
-        await asyncio.Future();
+    async def start_server():
+        async with websockets.serve(handle_client, "127.0.0.1", 8765):
+            print("WebSocket engine spinning on port 8765...")
+            await asyncio.Future()  # Keeps the server alive
 
-if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        loop.run_until_complete(start_server())
     except KeyboardInterrupt:
         print("\nShutting down WebSocket engine...")
+
+
+if __name__ == "__main__":
+    # 1. Start the WebSocket server in a daemon thread so it doesn't block GUI execution
+    server_thread = threading.Thread(target=run_websocket_server, daemon=True)
+    server_thread.start()
+
+    # 2. Get the local file path for index.html
+    html_path = get_resource_path("index.html")
+
+    # 3. Initialize the desktop window
+    webview.create_window(
+        title="Control Panel",
+        url=f"file://{os.path.abspath(html_path)}",
+        width=450,
+        height=600,
+        resizable=True,
+    )
+
+    # 4. Start the native window event loop (must run on the main thread)
+    webview.start()
