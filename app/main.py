@@ -1,43 +1,29 @@
-# for pyinstaller
 import os
 import sys
 from pathlib import Path
-# program lib
+
 import asyncio
-import websockets
 import threading
+import websockets
+import webview
+
+from runtime_config import configure_pythonnet_runtime_before_webview
 
 # ==============================================================================
 # CRITICAL FIX FOR WINDOWS 10 & 11 (PyInstaller + pywebview + pythonnet)
 # ==============================================================================
-if getattr(sys, 'frozen', False):
-    # PyInstaller unpacks bundled DLLs into sys._MEIPASS
-    base_path = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
-    
-    # Search for python3xx.dll in the bundle root and _internal subfolder
-    dll_candidates = list(base_path.glob("python3*.dll")) + list((base_path / "_internal").glob("python3*.dll"))
-    
-    if dll_candidates:
-        os.environ["PYTHONNET_PYDLL"] = str(dll_candidates[0].resolve())
-
-# Explicitly initialize pythonnet to use .NET Framework BEFORE webview imports clr
-try:
-    from pythonnet import set_runtime
-    set_runtime("netfx")
-except Exception:
-    pass
-# ==============================================================================
-
-import webview
+configure_pythonnet_runtime_before_webview()
+# ============================================================================== 
 
 
 # 1. Resolve asset path for PyInstaller bundle
 def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
+    base_path = getattr(sys, "_MEIPASS", None)
+    if base_path:
+        return os.path.join(base_path, relative_path)
+
+    base_path = Path(__file__).resolve().parent
+    return str((base_path / relative_path).resolve())
 
 # 2. WebSocket Handler (Port 8765)
 async def handle_client(websocket):
