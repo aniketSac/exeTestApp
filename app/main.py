@@ -1,36 +1,44 @@
+# for pyinstaller
 import os
 import sys
 from pathlib import Path
-
-# ==============================================================================
-# CRITICAL FIX FOR WINDOWS 10 & 11 (PyInstaller + pywebview + pythonnet)
-# ==============================================================================
-# Explicitly set the location of python3xx.dll before importing webview or clr.
-# This prevents 'RuntimeError: Failed to resolve Python.Runtime.Loader.Initialize'
-# when running frozen builds across different Windows machines.
-if getattr(sys, 'frozen', False):
-    python_dir = Path(sys.executable).parent
-    # Check both root and _internal directories for python3xx.dll
-    dll_candidates = list(python_dir.glob("python3*.dll")) + list((python_dir / "_internal").glob("python3*.dll"))
-    if dll_candidates:
-        os.environ["PYTHONNET_PYDLL"] = str(dll_candidates[0].resolve())
-# ==============================================================================
-
+# program lib
 import asyncio
 import websockets
 import threading
 import webview
 
+# ==============================================================================
+# CRITICAL FIX FOR WINDOWS 10 & 11 (PyInstaller + pywebview + pythonnet)
+# ==============================================================================
+if getattr(sys, 'frozen', False):
+    # PyInstaller unpacks bundled DLLs into sys._MEIPASS
+    base_path = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
+    
+    # Search for python3xx.dll in the bundle root and _internal subfolder
+    dll_candidates = list(base_path.glob("python3*.dll")) + list((base_path / "_internal").glob("python3*.dll"))
+    
+    if dll_candidates:
+        os.environ["PYTHONNET_PYDLL"] = str(dll_candidates[0].resolve())
+
+# Explicitly initialize pythonnet to use .NET Framework BEFORE webview imports clr
+try:
+    from pythonnet import set_runtime
+    set_runtime("netfx")
+except Exception:
+    pass
+# ==============================================================================
+
+
 # 1. Resolve asset path for PyInstaller bundle
 def resource_path(relative_path):
     try:
-        # PyInstaller extracts bundled files to _MEIPASS at runtime
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# 2. Your WebSocket Handler (Port 8765)
+# 2. WebSocket Handler (Port 8765)
 async def handle_client(websocket):
     print("🚀 Browser UI hooked into Python pipeline!")
     
@@ -59,7 +67,7 @@ async def handle_client(websocket):
             else:
                 print(f"Incomplete payload layout received: {len(payload)} bytes.")
 
-# 3. Function to start the Asyncio Loop in a background thread
+# 3. Start the Asyncio Loop in a background thread
 def start_websocket_server():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -72,7 +80,7 @@ def start_websocket_server():
     loop.run_until_complete(run_server())
 
 if __name__ == "__main__":
-    # Start the WebSocket server in a background daemon thread
+    # Start WebSocket server thread
     server_thread = threading.Thread(target=start_websocket_server, daemon=True)
     server_thread.start()
 
@@ -86,6 +94,5 @@ if __name__ == "__main__":
         height=700
     )
 
-    # Starts pywebview with EdgeChromium engine fallback for Windows 10 & 11
-    # This prevents legacy WinForms/pythonnet initialization crashes
+    # Force EdgeChromium runtime
     webview.start(gui='edgechromium')
