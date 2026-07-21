@@ -6,7 +6,6 @@ from pathlib import Path
 import asyncio
 import websockets
 import threading
-import webview
 
 # ==============================================================================
 # CRITICAL FIX FOR WINDOWS 10 & 11 (PyInstaller + pywebview + pythonnet)
@@ -28,6 +27,8 @@ try:
 except Exception:
     pass
 # ==============================================================================
+
+import webview
 
 
 # 1. Resolve asset path for PyInstaller bundle

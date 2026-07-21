@@ -37,12 +37,8 @@ jobs:
           --collect-all clr_loader `
           main.py
 
-    - name: Zip Build Folder
-      run: |
-        Compress-Archive -Path "app/dist/main/*" -DestinationPath "app/dist/MyApp-Windows.zip"
-
-    - name: Upload Output Zip
+    - name: Upload Output Folder
       uses: actions/upload-artifact@v4
       with:
         name: MyApp-Windows-Build
-        path: app/dist/MyApp-Windows.zip
+        path: app/dist/main/
